@@ -25,7 +25,8 @@ import re
 import torch
 from unsloth_zoo.compiler import create_new_function
 from unsloth_zoo.logging_utils import PatchRLStatistics
-from unsloth_zoo.rl_replacements import RL_REPLACEMENTS
+# from unsloth_zoo.rl_replacements import RL_REPLACEMENTS
+from .unsloth_zoo_rl_replacements import RL_REPLACEMENTS
 from .rl_replacements import (
     RL_EXTRA_ARGS,
     RL_FUNCTIONS,
