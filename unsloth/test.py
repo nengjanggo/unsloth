@@ -57,7 +57,7 @@ def main():
         load_in_4bit = False,
         full_finetuning = False,
         fast_inference = True,
-        gpu_memory_utilization = 0.8,
+        gpu_memory_utilization = 0.9,
         max_lora_rank = lora_rank
     )
 
