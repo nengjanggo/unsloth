@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *.class
-unsloth_compiled_cache/
+unsloth_compiled_cache/*
+!unsloth_compiled_cache/UnslothGRPOTrainer.py
 
 # C extensions
 *.so
@@ -177,3 +178,5 @@ cython_debug/
 .vscode
 
 grpo_trainer_lora_model/adapter_config.json
+wandb/
+output/
