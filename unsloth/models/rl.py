@@ -943,14 +943,30 @@ def _patch_trl_rl_trainers(trainer_file = "grpo_trainer"):
     # Remove multiple newlines
     RLTrainer_source = re.sub(r"[\n]{3,}", "\n", RLTrainer_source)
 
-    # Create new function
-    created_module = create_new_function(
-        f"Unsloth{RLTrainer_name}",
-        RLTrainer_source,
-        f"trl.trainer.{trainer_file}",
-        imports,
-        overwrite = True,
-    )
+    if RLTrainer_name == 'GRPOTrainer':
+        import importlib.util
+        folder_name = 'unsloth_compiled_cache'
+        file_name = 'UnslothGRPOTrainer'
+        module_path = os.path.join(
+            os.path.dirname(__file__), 
+            '..', 
+            '..', 
+            folder_name, 
+            file_name + '.py'
+        )
+        module_path = os.path.abspath(module_path)
+        spec = importlib.util.spec_from_file_location(f'{folder_name}.{file_name}', module_path)
+        created_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(created_module)
+    else:
+        # Create new function
+        created_module = create_new_function(
+            f"Unsloth{RLTrainer_name}",
+            RLTrainer_source,
+            f"trl.trainer.{trainer_file}",
+            imports,
+            overwrite = True,
+        )
 
     # Patch Trainer
     exec(
