@@ -3791,9 +3791,15 @@ class UnslothGRPOTrainer(_UnslothGRPOTrainer):
                     planning_token_mask[:, start_idx : start_idx + strategic_gram_len] |= match.unsqueeze(1)
                     strategic_gram_counts[sg_idx] += match.sum().item()
 
-        strategic_gram_counts = torch.tensor(strategic_gram_counts)
+        strategic_gram_counts = torch.tensor(strategic_gram_counts, dtype=torch.float32, device=completion_ids.device)
+
+        if strategic_gram_counts.sum() == 0:
+            semantic_entropy = torch.tensor(0.0, dtype=torch.float32, device=completion_ids.device)
+            return planning_token_mask, semantic_entropy
+
         strategic_gram_prob = strategic_gram_counts / strategic_gram_counts.sum()
-        semantic_entropy = -(strategic_gram_prob * strategic_gram_prob.log()).sum()
+        valid_strategic_gram_prob = strategic_gram_prob[strategic_gram_prob > 0]
+        semantic_entropy = -(valid_strategic_gram_prob * valid_strategic_gram_prob.log()).sum()
                 
         return planning_token_mask, semantic_entropy
 
