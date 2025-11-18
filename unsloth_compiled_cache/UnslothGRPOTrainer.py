@@ -242,7 +242,6 @@ def grpo_compute_loss(
     new = new_x - torch.logsumexp(new_logits, dim = -1) # (1,s)\
 
     # nengjanggo
-    execution_token_entropy_coef = kwargs.get('execution_token_entropy_coef', 0.0)
     if execution_token_mask is not None: # (1,s)
         new_log_probs = torch.log_softmax(new_logits, dim=-1) # (1,s,v)
         new_probs = torch.exp(new_log_probs) # (1,s,v)
@@ -391,6 +390,7 @@ def grpo_compute_loss(
         raise ValueError(f"Unknown loss type: {loss_type}")
 
     # nengjanggo
+    execution_token_entropy_coef = 0.0
     loss += execution_token_entropy_coef * normalized_execution_per_token_entropy.squeeze() # TODO
 
     # loss = (loss_i * mask).sum() / mask.sum()
@@ -750,7 +750,6 @@ def grpo_accumulated_loss( # grpo_accumulated_loss -> forward -> accumulate_chun
         planning_token_mask, semantic_entropy = trainer.get_planning_token_mask(completion_input_ids)
         execution_token_mask = (completion_mask.bool() & (~planning_token_mask))
         execution_token_mask = execution_token_mask.to(completion_mask.dtype)
-        execution_token_entropy_coef = 0.0
 
     loss, completion_length, mean_kl, delta, flat_is_ratio, planning_per_token_entropy, execution_per_token_entropy, normalized_execution_per_token_entropy = UnslothEfficientGRPO.apply( # forward -> accumulate_chunk -> compute_loss -> grpo_compute_loss
         new_hidden_states,
@@ -767,8 +766,7 @@ def grpo_accumulated_loss( # grpo_accumulated_loss -> forward -> accumulate_chun
         trainer.accelerator.scaler,
         n_chunks,
         {
-            **kwargs,
-            'execution_token_entropy_coef': execution_token_entropy_coef
+            **kwargs
         } # pass kwargs as a dict
     )
 
