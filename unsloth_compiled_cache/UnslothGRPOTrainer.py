@@ -538,13 +538,13 @@ class UnslothEfficientGRPO(torch.autograd.Function):
             grad_inputs_j[:] = chunk_grad_input
         pass
 
-        accumulate_chunk = torch.compile(
-            accumulate_chunk,
-            fullgraph = True,
-            # [TODO] Dynamic marking causes torch.compile errors if sequence length is long
-            dynamic = True,
-            options = torch_compile_options,
-        )
+        # accumulate_chunk = torch.compile(
+        #     accumulate_chunk,
+        #     fullgraph = True,
+        #     # [TODO] Dynamic marking causes torch.compile errors if sequence length is long
+        #     dynamic = True,
+        #     options = torch_compile_options,
+        # )
 
         grad_inputs_chunks = torch.chunk(grad_inputs,        chunks = n_chunks, dim = 0) # ( (1,s,h), ... , (1,s,h) )
         new_hidden_states  = torch.chunk(_new_hidden_states, chunks = n_chunks, dim = 0) # ( (1,s,h), ... , (1,s,h) )
@@ -2767,17 +2767,22 @@ class _UnslothGRPOTrainer(Trainer):
             if self.args.gradient_accumulation_steps % generate_every != 0 or (
                 self.use_vllm
             ):
-                old_per_token_logps, _ = self._get_per_token_logps_and_entropies(
-                    self.model,
-                    prompt_completion_ids,
-                    attention_mask,
-                    logits_to_keep,
-                    batch_size,
-                    pixel_values=prompt_inputs.get("pixel_values"),
-                    image_grid_thw=prompt_inputs.get("image_grid_thw"),
-                    pixel_attention_mask=prompt_inputs.get("pixel_attention_mask"),
-                    image_sizes=prompt_inputs.get("image_sizes"),
-                )
+                # Here, despite the name, old_per_token_logps actually stores hidden states rather than log probabilities
+                all_old_per_token_logps = []
+                for i in range(self.args.gradient_accumulation_steps):
+                    chunk_old_per_token_logps, _ = self._get_per_token_logps_and_entropies(
+                        self.model,
+                        prompt_completion_ids[i * batch_size:(i+1) * batch_size],
+                        attention_mask[i * batch_size:(i+1) * batch_size],
+                        logits_to_keep,
+                        batch_size,
+                        pixel_values=prompt_inputs.get("pixel_values"),
+                        image_grid_thw=prompt_inputs.get("image_grid_thw"),
+                        pixel_attention_mask=prompt_inputs.get("pixel_attention_mask"),
+                        image_sizes=prompt_inputs.get("image_sizes"),
+                    )
+                    all_old_per_token_logps.append(chunk_old_per_token_logps)
+                old_per_token_logps = torch.concat(all_old_per_token_logps, dim=0)
             else:
                 old_per_token_logps = None
 
