@@ -9,7 +9,7 @@ from trl import GRPOConfig, GRPOTrainer
 
 def main():
     model_name = 'Qwen/Qwen3-4B-Instruct-2507'
-    max_length = 1024 * 5
+    max_length = 1024 * 8
     max_prompt_length = 256
     max_completion_length = max_length - max_prompt_length
     lora_rank = 4
@@ -35,7 +35,7 @@ def main():
         use_gradient_checkpointing = 'unsloth'
     )
     
-    dataset = get_dapomath17k(1000)
+    dataset = get_dapomath17k(2000)
     split_dataset = dataset.train_test_split(test_size=64*2, seed=42)
     train_dataset = split_dataset['train']
     eval_dataset = split_dataset['test']
@@ -56,8 +56,8 @@ def main():
         mask_truncated_completions=True,
         log_completions='rich',
         output_dir=output_dir,
-        per_device_train_batch_size=64,
-        gradient_accumulation_steps=1,
+        per_device_train_batch_size=32,
+        gradient_accumulation_steps=4,
         torch_empty_cache_steps=1,
         learning_rate=5e-6,
         max_steps=100,
